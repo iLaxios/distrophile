@@ -6,4 +6,8 @@ type Config struct {
 	StorageNodePort   string `mapstructure:"storage_node_port"`
 	DataDir           string `mapstructure:"data_dir"`
 	ReplicationFactor int    `mapstructure:"replication_factor"`
+
+	// mongo configs
+	MongoURI string `mapstructure:"mongo_uri"`
+	MongoDB  string `mapstructure:"mongo_db"`
 }
