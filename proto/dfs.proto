@@ -1,0 +1,261 @@
+syntax = "proto3";
+
+package distrophile.dfs;
+option go_package = "github.com/iLaxios/distrophile/proto;proto";
+
+// Useful imports
+import "google/protobuf/timestamp.proto";
+
+// -----------------------------
+// Messages (metadata & chunks)
+// -----------------------------
+message FileMetadata {
+  string file_id = 1;                // unique file identifier (UUID)
+  string filename = 2;               // original filename
+  int64 size_bytes = 3;              // original file size
+  repeated ChunkMeta chunks = 4;     // ordered chunk list
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message ChunkMeta {
+  string chunk_id = 1;               // unique chunk id
+  int32 index = 2;                   // chunk index (0..n-1)
+  int64 size_bytes = 3;              // size of this chunk
+  string checksum = 4;               // e.g. sha256 hex
+  repeated string node_ids = 5;      // node ids that hold this chunk
+}
+
+message NodeInfo {
+  string node_id = 1;
+  string addr = 2;                   // host:port
+  NodeState state = 3;
+  int64 free_bytes = 4;
+  google.protobuf.Timestamp last_heartbeat = 5;
+}
+
+enum NodeState {
+  UNKNOWN = 0;
+  HEALTHY = 1;
+  UNHEALTHY = 2;
+  OFFLINE = 3;
+}
+
+// -----------------------------
+// Chunk payload messages
+// -----------------------------
+message ChunkPayload {
+  string chunk_id = 1;               // coordinator assigned chunk id (optional client side)
+  int32 index = 2;                   // chunk index
+  bytes data = 3;                    // raw bytes for this chunk
+  int64 size_bytes = 4;              // length of data
+  string checksum = 5;               // optional checksum (e.g. sha256)
+}
+
+message ChunkUploadResult {
+  string chunk_id = 1;
+  string node_id = 2;
+  bool success = 3;
+  string error = 4;
+  string checksum = 5;
+}
+
+// -----------------------------
+// CLI <-> Coordinator RPCs
+// -----------------------------
+// Upload: bidirectional streaming so client can stream chunks and receive per-chunk/summary acks.
+message UploadRequest {
+  // Either metadata (first message) OR a chunk payload
+  oneof payload {
+    FileUploadMeta meta = 1;
+    ChunkPayload chunk = 2;
+  }
+}
+
+message FileUploadMeta {
+  string filename = 1;
+  int64 size_bytes = 2;
+  int32 chunk_size = 3; // coordinator hint (bytes)
+  // Optional client-provided file_id to resume; otherwise server generates one
+  string file_id = 4;
+}
+
+message UploadResponse {
+  oneof payload {
+    ChunkUploadResult chunk_result = 1; // ack for each chunk
+    FileUploadSummary summary = 2;      // final summary returned when upload completes
+    ErrorErr error = 3;
+  }
+}
+
+message FileUploadSummary {
+  string file_id = 1;
+  FileMetadata metadata = 2;
+}
+
+message ErrorErr {
+  string message = 1;
+  int32 code = 2;
+}
+
+// Download: client sends download request, server streams chunk payloads back
+message DownloadRequest {
+  string file_id = 1;
+  // optional: allow selecting preferred node or force checksum checks etc.
+  repeated string preferred_nodes = 2;
+}
+
+message DownloadResponse {
+  oneof payload {
+    ChunkPayload chunk = 1;
+    FileMetadata metadata = 2; // optionally send metadata first
+    ErrorErr error = 3;
+  }
+}
+
+// List files & nodes
+message ListFilesRequest {
+  // pagination (optional)
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListFilesResponse {
+  repeated FileMetadata files = 1;
+  int32 total = 2;
+}
+
+message ListNodesRequest {}
+
+message ListNodesResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+// CLI service
+service CoordinatorService {
+  // Bidirectional streaming upload
+  rpc Upload(stream UploadRequest) returns (stream UploadResponse);
+
+  // Download: client sends single request, server streams DownloadResponse
+  rpc Download(DownloadRequest) returns (stream DownloadResponse);
+
+  // List files
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+
+  // List nodes
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+
+  // Get file metadata
+  rpc GetFileInfo(GetFileInfoRequest) returns (FileMetadata);
+}
+
+message GetFileInfoRequest {
+  string file_id = 1;
+}
+
+
+// -----------------------------
+// Coordinator <-> Storage Node RPCs
+// -----------------------------
+message StoreChunkRequest {
+  // chunk metadata plus payload
+  ChunkPayload chunk = 1;
+  // origin metadata (file id, uploader id)
+  string file_id = 2;
+  string uploader = 3;
+}
+
+message StoreChunkAck {
+  string chunk_id = 1;
+  string node_id = 2;
+  bool ok = 3;
+  string checksum = 4;
+  string error = 5;
+}
+
+// Make StoreChunk bidirectional to allow coordinator to stream many chunks and the node ack as they come
+service StorageNodeService {
+  // Coordinator streams chunks to node; node acks back per chunk
+  rpc StoreChunk(stream StoreChunkRequest) returns (stream StoreChunkAck);
+
+  // Coordinator requests a chunk back
+  rpc GetChunk(GetChunkRequest) returns (GetChunkResponse);
+
+  // Node health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // Instruct node to replicate a chunk from another node (coordinator-driven)
+  rpc ReplicateChunk(ReplicateChunkRequest) returns (ReplicateChunkResponse);
+}
+
+message GetChunkRequest {
+  string chunk_id = 1;
+}
+
+message GetChunkResponse {
+  oneof payload {
+    ChunkPayload chunk = 1;
+    ErrorErr error = 2;
+  }
+}
+
+message HealthCheckRequest {
+  // optional: request for additional info
+  bool full = 1;
+}
+
+message HealthCheckResponse {
+  NodeInfo info = 1;
+  // quick metrics
+  int32 active_connections = 2;
+  bool storage_ok = 3;
+  ErrorErr error = 4;
+}
+
+message ReplicateChunkRequest {
+  string chunk_id = 1;
+  string source_node = 2; // optional; coordinator may provide source
+  string target_node = 3; // usually the node receiving this RPC is target_node
+}
+
+message ReplicateChunkResponse {
+  bool ok = 1;
+  string chunk_id = 2;
+  string error = 3;
+}
+
+// -----------------------------
+// Replication & Jobs (Coordinator internal / optional RPCs)
+// -----------------------------
+message ReplicationJob {
+  string job_id = 1;
+  string file_id = 2;
+  string chunk_id = 3;
+  string source_node = 4;
+  string target_node = 5;
+  google.protobuf.Timestamp enqueued_at = 6;
+  google.protobuf.Timestamp started_at = 7;
+  google.protobuf.Timestamp finished_at = 8;
+  bool success = 9;
+  string error = 10;
+}
+
+service CoordinatorAdmin {
+  rpc EnqueueReplication(ReplicationJob) returns (ReplicationJobAck);
+  rpc ListReplicationJobs(ListReplicationJobsRequest) returns (ListReplicationJobsResponse);
+}
+
+message ReplicationJobAck {
+  string job_id = 1;
+  bool accepted = 2;
+  string error = 3;
+}
+
+message ListReplicationJobsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+message ListReplicationJobsResponse {
+  repeated ReplicationJob jobs = 1;
+  int32 total = 2;
+}
