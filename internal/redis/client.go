@@ -12,9 +12,9 @@ import (
 var Rdb *redis.Client
 var ctx = context.Background()
 
-func Connect(cfg *config.Config) *redis.Client {
+func Connect(cfg *config.Config) (*redis.Client, error) {
 	if Rdb != nil {
-		return Rdb
+		return Rdb, nil
 	}
 
 	Rdb = redis.NewClient(&redis.Options{
@@ -24,12 +24,11 @@ func Connect(cfg *config.Config) *redis.Client {
 
 	// Test connectivity
 	if err := Rdb.Ping(ctx).Err(); err != nil {
-		logger.Log().Error("Redis connection failed", zap.Error(err))
-		return nil
+		return nil, err
 	}
 
 	logger.Log().Info("Redis connected", zap.String("addr", cfg.RedisAddr))
-	return Rdb
+	return Rdb, nil
 }
 
 // Optional helper to get the context
