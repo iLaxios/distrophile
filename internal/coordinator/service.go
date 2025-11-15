@@ -8,15 +8,17 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iLaxios/distrophile/internal/common/config"
+	"github.com/iLaxios/distrophile/internal/mongodb"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Coordinator implements proto.CoordinatorServiceServer & proto.CoordinatorAdminServer
 type Coordinator struct {
-	Cfg   *config.Config
-	Log   *zap.SugaredLogger
-	Mongo *mongo.Client
-	Redis *redis.Client
+	Cfg          *config.Config
+	Log          *zap.SugaredLogger
+	Mongo        *mongo.Client
+	Redis        *redis.Client
+	MetadataRepo *mongodb.MetadataRepo
 
 	proto.UnimplementedCoordinatorServiceServer
 	proto.UnimplementedCoordinatorAdminServer
@@ -24,11 +26,15 @@ type Coordinator struct {
 
 // Constructor for Coordinator
 func NewCoordinator(cfg *config.Config, log *zap.SugaredLogger, mongo *mongo.Client, rdb *redis.Client) *Coordinator {
+
+	repo := mongodb.NewMetadataRepo(mongo, cfg.MongoDB)
+
 	return &Coordinator{
-		Cfg:   cfg,
-		Log:   log,
-		Mongo: mongo,
-		Redis: rdb,
+		Cfg:          cfg,
+		Log:          log,
+		Mongo:        mongo,
+		Redis:        rdb,
+		MetadataRepo: repo,
 	}
 }
 
@@ -48,9 +54,17 @@ func (c *Coordinator) Download(req *proto.DownloadRequest, stream proto.Coordina
 
 func (c *Coordinator) ListFiles(ctx context.Context, req *proto.ListFilesRequest) (*proto.ListFilesResponse, error) {
 	c.Log.Info("ListFiles called (stub)")
+
+	files, total, err := c.MetadataRepo.ListFiles(int64(req.Limit), int64(req.Offset))
+
+	if err != nil {
+		c.Log.Error("Failed to list files", "error", err)
+		return nil, err
+	}
+
 	return &proto.ListFilesResponse{
-		Files: []*proto.FileMetadata{},
-		Total: 0,
+		Files: files,
+		Total: int32(total),
 	}, nil
 }
 
