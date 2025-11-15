@@ -1,0 +1,5 @@
+env: dev
+coordinator_port: "9000"
+storage_node_port: "9001"
+data_dir: "./data"
+replication_factor: 2
