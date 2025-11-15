@@ -10,4 +10,7 @@ type Config struct {
 	// mongo configs
 	MongoURI string `mapstructure:"mongo_uri"`
 	MongoDB  string `mapstructure:"mongo_db"`
+
+	// redis
+	RedisAddr string `mapstructure:"redis_addr"`
 }

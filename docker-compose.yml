@@ -12,5 +12,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
 
+  redis:
+    image: redis:7.0
+    container_name: distrophile-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+  
+
 volumes:
   mongo_data:
+  redis_data:
