@@ -131,6 +131,29 @@ message ListNodesResponse {
   repeated NodeInfo nodes = 1;
 }
 
+// Node registration & heartbeat messages
+message RegisterNodeRequest {
+  NodeInfo info = 1;
+}
+
+message RegisterNodeResponse {
+  string node_id = 1;
+  bool accepted = 2;
+  string error = 3;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  int64 free_bytes = 2;
+  google.protobuf.Timestamp now = 3; // optional, coordinator can stamp server time
+}
+
+message HeartbeatResponse {
+  bool ok = 1;
+  string error = 2;
+}
+
+
 // CLI service
 service CoordinatorService {
   // Bidirectional streaming upload
@@ -147,6 +170,12 @@ service CoordinatorService {
 
   // Get file metadata
   rpc GetFileInfo(GetFileInfoRequest) returns (FileMetadata);
+
+  // register a node
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+
+  // handle node heartbeat
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message GetFileInfoRequest {
@@ -181,9 +210,6 @@ service StorageNodeService {
   // Coordinator requests a chunk back
   rpc GetChunk(GetChunkRequest) returns (GetChunkResponse);
 
-  // Node health check
-  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
-
   // Instruct node to replicate a chunk from another node (coordinator-driven)
   rpc ReplicateChunk(ReplicateChunkRequest) returns (ReplicateChunkResponse);
 }
@@ -199,18 +225,6 @@ message GetChunkResponse {
   }
 }
 
-message HealthCheckRequest {
-  // optional: request for additional info
-  bool full = 1;
-}
-
-message HealthCheckResponse {
-  NodeInfo info = 1;
-  // quick metrics
-  int32 active_connections = 2;
-  bool storage_ok = 3;
-  ErrorErr error = 4;
-}
 
 message ReplicateChunkRequest {
   string chunk_id = 1;
