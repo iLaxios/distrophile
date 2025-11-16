@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CoordinatorService_Upload_FullMethodName      = "/distrophile.dfs.CoordinatorService/Upload"
-	CoordinatorService_Download_FullMethodName    = "/distrophile.dfs.CoordinatorService/Download"
-	CoordinatorService_ListFiles_FullMethodName   = "/distrophile.dfs.CoordinatorService/ListFiles"
-	CoordinatorService_ListNodes_FullMethodName   = "/distrophile.dfs.CoordinatorService/ListNodes"
-	CoordinatorService_GetFileInfo_FullMethodName = "/distrophile.dfs.CoordinatorService/GetFileInfo"
+	CoordinatorService_Upload_FullMethodName       = "/distrophile.dfs.CoordinatorService/Upload"
+	CoordinatorService_Download_FullMethodName     = "/distrophile.dfs.CoordinatorService/Download"
+	CoordinatorService_ListFiles_FullMethodName    = "/distrophile.dfs.CoordinatorService/ListFiles"
+	CoordinatorService_ListNodes_FullMethodName    = "/distrophile.dfs.CoordinatorService/ListNodes"
+	CoordinatorService_GetFileInfo_FullMethodName  = "/distrophile.dfs.CoordinatorService/GetFileInfo"
+	CoordinatorService_RegisterNode_FullMethodName = "/distrophile.dfs.CoordinatorService/RegisterNode"
+	CoordinatorService_Heartbeat_FullMethodName    = "/distrophile.dfs.CoordinatorService/Heartbeat"
 )
 
 // CoordinatorServiceClient is the client API for CoordinatorService service.
@@ -42,6 +44,10 @@ type CoordinatorServiceClient interface {
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
 	// Get file metadata
 	GetFileInfo(ctx context.Context, in *GetFileInfoRequest, opts ...grpc.CallOption) (*FileMetadata, error)
+	// register a node
+	RegisterNode(ctx context.Context, in *RegisterNodeRequest, opts ...grpc.CallOption) (*RegisterNodeResponse, error)
+	// handle node heartbeat
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 }
 
 type coordinatorServiceClient struct {
@@ -114,6 +120,26 @@ func (c *coordinatorServiceClient) GetFileInfo(ctx context.Context, in *GetFileI
 	return out, nil
 }
 
+func (c *coordinatorServiceClient) RegisterNode(ctx context.Context, in *RegisterNodeRequest, opts ...grpc.CallOption) (*RegisterNodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterNodeResponse)
+	err := c.cc.Invoke(ctx, CoordinatorService_RegisterNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HeartbeatResponse)
+	err := c.cc.Invoke(ctx, CoordinatorService_Heartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServiceServer is the server API for CoordinatorService service.
 // All implementations must embed UnimplementedCoordinatorServiceServer
 // for forward compatibility.
@@ -130,6 +156,10 @@ type CoordinatorServiceServer interface {
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
 	// Get file metadata
 	GetFileInfo(context.Context, *GetFileInfoRequest) (*FileMetadata, error)
+	// register a node
+	RegisterNode(context.Context, *RegisterNodeRequest) (*RegisterNodeResponse, error)
+	// handle node heartbeat
+	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	mustEmbedUnimplementedCoordinatorServiceServer()
 }
 
@@ -154,6 +184,12 @@ func (UnimplementedCoordinatorServiceServer) ListNodes(context.Context, *ListNod
 }
 func (UnimplementedCoordinatorServiceServer) GetFileInfo(context.Context, *GetFileInfoRequest) (*FileMetadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileInfo not implemented")
+}
+func (UnimplementedCoordinatorServiceServer) RegisterNode(context.Context, *RegisterNodeRequest) (*RegisterNodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterNode not implemented")
+}
+func (UnimplementedCoordinatorServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedCoordinatorServiceServer) mustEmbedUnimplementedCoordinatorServiceServer() {}
 func (UnimplementedCoordinatorServiceServer) testEmbeddedByValue()                            {}
@@ -248,6 +284,42 @@ func _CoordinatorService_GetFileInfo_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CoordinatorService_RegisterNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServiceServer).RegisterNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CoordinatorService_RegisterNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServiceServer).RegisterNode(ctx, req.(*RegisterNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CoordinatorService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServiceServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CoordinatorService_Heartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServiceServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CoordinatorService_ServiceDesc is the grpc.ServiceDesc for CoordinatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +338,14 @@ var CoordinatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileInfo",
 			Handler:    _CoordinatorService_GetFileInfo_Handler,
+		},
+		{
+			MethodName: "RegisterNode",
+			Handler:    _CoordinatorService_RegisterNode_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _CoordinatorService_Heartbeat_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -287,7 +367,6 @@ var CoordinatorService_ServiceDesc = grpc.ServiceDesc{
 const (
 	StorageNodeService_StoreChunk_FullMethodName     = "/distrophile.dfs.StorageNodeService/StoreChunk"
 	StorageNodeService_GetChunk_FullMethodName       = "/distrophile.dfs.StorageNodeService/GetChunk"
-	StorageNodeService_HealthCheck_FullMethodName    = "/distrophile.dfs.StorageNodeService/HealthCheck"
 	StorageNodeService_ReplicateChunk_FullMethodName = "/distrophile.dfs.StorageNodeService/ReplicateChunk"
 )
 
@@ -301,8 +380,6 @@ type StorageNodeServiceClient interface {
 	StoreChunk(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StoreChunkRequest, StoreChunkAck], error)
 	// Coordinator requests a chunk back
 	GetChunk(ctx context.Context, in *GetChunkRequest, opts ...grpc.CallOption) (*GetChunkResponse, error)
-	// Node health check
-	HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
 	// Instruct node to replicate a chunk from another node (coordinator-driven)
 	ReplicateChunk(ctx context.Context, in *ReplicateChunkRequest, opts ...grpc.CallOption) (*ReplicateChunkResponse, error)
 }
@@ -338,16 +415,6 @@ func (c *storageNodeServiceClient) GetChunk(ctx context.Context, in *GetChunkReq
 	return out, nil
 }
 
-func (c *storageNodeServiceClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthCheckResponse)
-	err := c.cc.Invoke(ctx, StorageNodeService_HealthCheck_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *storageNodeServiceClient) ReplicateChunk(ctx context.Context, in *ReplicateChunkRequest, opts ...grpc.CallOption) (*ReplicateChunkResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReplicateChunkResponse)
@@ -368,8 +435,6 @@ type StorageNodeServiceServer interface {
 	StoreChunk(grpc.BidiStreamingServer[StoreChunkRequest, StoreChunkAck]) error
 	// Coordinator requests a chunk back
 	GetChunk(context.Context, *GetChunkRequest) (*GetChunkResponse, error)
-	// Node health check
-	HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
 	// Instruct node to replicate a chunk from another node (coordinator-driven)
 	ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error)
 	mustEmbedUnimplementedStorageNodeServiceServer()
@@ -387,9 +452,6 @@ func (UnimplementedStorageNodeServiceServer) StoreChunk(grpc.BidiStreamingServer
 }
 func (UnimplementedStorageNodeServiceServer) GetChunk(context.Context, *GetChunkRequest) (*GetChunkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChunk not implemented")
-}
-func (UnimplementedStorageNodeServiceServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
 }
 func (UnimplementedStorageNodeServiceServer) ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReplicateChunk not implemented")
@@ -440,24 +502,6 @@ func _StorageNodeService_GetChunk_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StorageNodeService_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthCheckRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StorageNodeServiceServer).HealthCheck(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: StorageNodeService_HealthCheck_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageNodeServiceServer).HealthCheck(ctx, req.(*HealthCheckRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _StorageNodeService_ReplicateChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReplicateChunkRequest)
 	if err := dec(in); err != nil {
@@ -486,10 +530,6 @@ var StorageNodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetChunk",
 			Handler:    _StorageNodeService_GetChunk_Handler,
-		},
-		{
-			MethodName: "HealthCheck",
-			Handler:    _StorageNodeService_HealthCheck_Handler,
 		},
 		{
 			MethodName: "ReplicateChunk",

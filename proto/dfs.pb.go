@@ -1165,6 +1165,223 @@ func (x *ListNodesResponse) GetNodes() []*NodeInfo {
 	return nil
 }
 
+// Node registration & heartbeat messages
+type RegisterNodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Info          *NodeInfo              `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterNodeRequest) Reset() {
+	*x = RegisterNodeRequest{}
+	mi := &file_proto_dfs_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterNodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterNodeRequest) ProtoMessage() {}
+
+func (x *RegisterNodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dfs_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterNodeRequest.ProtoReflect.Descriptor instead.
+func (*RegisterNodeRequest) Descriptor() ([]byte, []int) {
+	return file_proto_dfs_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RegisterNodeRequest) GetInfo() *NodeInfo {
+	if x != nil {
+		return x.Info
+	}
+	return nil
+}
+
+type RegisterNodeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Accepted      bool                   `protobuf:"varint,2,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterNodeResponse) Reset() {
+	*x = RegisterNodeResponse{}
+	mi := &file_proto_dfs_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterNodeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterNodeResponse) ProtoMessage() {}
+
+func (x *RegisterNodeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dfs_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterNodeResponse.ProtoReflect.Descriptor instead.
+func (*RegisterNodeResponse) Descriptor() ([]byte, []int) {
+	return file_proto_dfs_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RegisterNodeResponse) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *RegisterNodeResponse) GetAccepted() bool {
+	if x != nil {
+		return x.Accepted
+	}
+	return false
+}
+
+func (x *RegisterNodeResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type HeartbeatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	FreeBytes     int64                  `protobuf:"varint,2,opt,name=free_bytes,json=freeBytes,proto3" json:"free_bytes,omitempty"`
+	Now           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"` // optional, coordinator can stamp server time
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatRequest) Reset() {
+	*x = HeartbeatRequest{}
+	mi := &file_proto_dfs_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatRequest) ProtoMessage() {}
+
+func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dfs_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
+func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
+	return file_proto_dfs_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *HeartbeatRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetFreeBytes() int64 {
+	if x != nil {
+		return x.FreeBytes
+	}
+	return 0
+}
+
+func (x *HeartbeatRequest) GetNow() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Now
+	}
+	return nil
+}
+
+type HeartbeatResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatResponse) Reset() {
+	*x = HeartbeatResponse{}
+	mi := &file_proto_dfs_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatResponse) ProtoMessage() {}
+
+func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dfs_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
+func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
+	return file_proto_dfs_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *HeartbeatResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *HeartbeatResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 type GetFileInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
@@ -1174,7 +1391,7 @@ type GetFileInfoRequest struct {
 
 func (x *GetFileInfoRequest) Reset() {
 	*x = GetFileInfoRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[16]
+	mi := &file_proto_dfs_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1186,7 +1403,7 @@ func (x *GetFileInfoRequest) String() string {
 func (*GetFileInfoRequest) ProtoMessage() {}
 
 func (x *GetFileInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[16]
+	mi := &file_proto_dfs_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1199,7 +1416,7 @@ func (x *GetFileInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFileInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetFileInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{16}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetFileInfoRequest) GetFileId() string {
@@ -1225,7 +1442,7 @@ type StoreChunkRequest struct {
 
 func (x *StoreChunkRequest) Reset() {
 	*x = StoreChunkRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[17]
+	mi := &file_proto_dfs_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1237,7 +1454,7 @@ func (x *StoreChunkRequest) String() string {
 func (*StoreChunkRequest) ProtoMessage() {}
 
 func (x *StoreChunkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[17]
+	mi := &file_proto_dfs_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1250,7 +1467,7 @@ func (x *StoreChunkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreChunkRequest.ProtoReflect.Descriptor instead.
 func (*StoreChunkRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{17}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *StoreChunkRequest) GetChunk() *ChunkPayload {
@@ -1287,7 +1504,7 @@ type StoreChunkAck struct {
 
 func (x *StoreChunkAck) Reset() {
 	*x = StoreChunkAck{}
-	mi := &file_proto_dfs_proto_msgTypes[18]
+	mi := &file_proto_dfs_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1299,7 +1516,7 @@ func (x *StoreChunkAck) String() string {
 func (*StoreChunkAck) ProtoMessage() {}
 
 func (x *StoreChunkAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[18]
+	mi := &file_proto_dfs_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1312,7 +1529,7 @@ func (x *StoreChunkAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreChunkAck.ProtoReflect.Descriptor instead.
 func (*StoreChunkAck) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{18}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *StoreChunkAck) GetChunkId() string {
@@ -1359,7 +1576,7 @@ type GetChunkRequest struct {
 
 func (x *GetChunkRequest) Reset() {
 	*x = GetChunkRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[19]
+	mi := &file_proto_dfs_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1371,7 +1588,7 @@ func (x *GetChunkRequest) String() string {
 func (*GetChunkRequest) ProtoMessage() {}
 
 func (x *GetChunkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[19]
+	mi := &file_proto_dfs_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1384,7 +1601,7 @@ func (x *GetChunkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChunkRequest.ProtoReflect.Descriptor instead.
 func (*GetChunkRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{19}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetChunkRequest) GetChunkId() string {
@@ -1407,7 +1624,7 @@ type GetChunkResponse struct {
 
 func (x *GetChunkResponse) Reset() {
 	*x = GetChunkResponse{}
-	mi := &file_proto_dfs_proto_msgTypes[20]
+	mi := &file_proto_dfs_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1419,7 +1636,7 @@ func (x *GetChunkResponse) String() string {
 func (*GetChunkResponse) ProtoMessage() {}
 
 func (x *GetChunkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[20]
+	mi := &file_proto_dfs_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1432,7 +1649,7 @@ func (x *GetChunkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChunkResponse.ProtoReflect.Descriptor instead.
 func (*GetChunkResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{20}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetChunkResponse) GetPayload() isGetChunkResponse_Payload {
@@ -1476,120 +1693,6 @@ func (*GetChunkResponse_Chunk) isGetChunkResponse_Payload() {}
 
 func (*GetChunkResponse_Error) isGetChunkResponse_Payload() {}
 
-type HealthCheckRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// optional: request for additional info
-	Full          bool `protobuf:"varint,1,opt,name=full,proto3" json:"full,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthCheckRequest) Reset() {
-	*x = HealthCheckRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthCheckRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthCheckRequest) ProtoMessage() {}
-
-func (x *HealthCheckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthCheckRequest.ProtoReflect.Descriptor instead.
-func (*HealthCheckRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *HealthCheckRequest) GetFull() bool {
-	if x != nil {
-		return x.Full
-	}
-	return false
-}
-
-type HealthCheckResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Info  *NodeInfo              `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
-	// quick metrics
-	ActiveConnections int32     `protobuf:"varint,2,opt,name=active_connections,json=activeConnections,proto3" json:"active_connections,omitempty"`
-	StorageOk         bool      `protobuf:"varint,3,opt,name=storage_ok,json=storageOk,proto3" json:"storage_ok,omitempty"`
-	Error             *ErrorErr `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *HealthCheckResponse) Reset() {
-	*x = HealthCheckResponse{}
-	mi := &file_proto_dfs_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthCheckResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthCheckResponse) ProtoMessage() {}
-
-func (x *HealthCheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthCheckResponse.ProtoReflect.Descriptor instead.
-func (*HealthCheckResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *HealthCheckResponse) GetInfo() *NodeInfo {
-	if x != nil {
-		return x.Info
-	}
-	return nil
-}
-
-func (x *HealthCheckResponse) GetActiveConnections() int32 {
-	if x != nil {
-		return x.ActiveConnections
-	}
-	return 0
-}
-
-func (x *HealthCheckResponse) GetStorageOk() bool {
-	if x != nil {
-		return x.StorageOk
-	}
-	return false
-}
-
-func (x *HealthCheckResponse) GetError() *ErrorErr {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
 type ReplicateChunkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
@@ -1601,7 +1704,7 @@ type ReplicateChunkRequest struct {
 
 func (x *ReplicateChunkRequest) Reset() {
 	*x = ReplicateChunkRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[23]
+	mi := &file_proto_dfs_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1613,7 +1716,7 @@ func (x *ReplicateChunkRequest) String() string {
 func (*ReplicateChunkRequest) ProtoMessage() {}
 
 func (x *ReplicateChunkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[23]
+	mi := &file_proto_dfs_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1626,7 +1729,7 @@ func (x *ReplicateChunkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplicateChunkRequest.ProtoReflect.Descriptor instead.
 func (*ReplicateChunkRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{23}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ReplicateChunkRequest) GetChunkId() string {
@@ -1661,7 +1764,7 @@ type ReplicateChunkResponse struct {
 
 func (x *ReplicateChunkResponse) Reset() {
 	*x = ReplicateChunkResponse{}
-	mi := &file_proto_dfs_proto_msgTypes[24]
+	mi := &file_proto_dfs_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1673,7 +1776,7 @@ func (x *ReplicateChunkResponse) String() string {
 func (*ReplicateChunkResponse) ProtoMessage() {}
 
 func (x *ReplicateChunkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[24]
+	mi := &file_proto_dfs_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1686,7 +1789,7 @@ func (x *ReplicateChunkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplicateChunkResponse.ProtoReflect.Descriptor instead.
 func (*ReplicateChunkResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{24}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ReplicateChunkResponse) GetOk() bool {
@@ -1731,7 +1834,7 @@ type ReplicationJob struct {
 
 func (x *ReplicationJob) Reset() {
 	*x = ReplicationJob{}
-	mi := &file_proto_dfs_proto_msgTypes[25]
+	mi := &file_proto_dfs_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1743,7 +1846,7 @@ func (x *ReplicationJob) String() string {
 func (*ReplicationJob) ProtoMessage() {}
 
 func (x *ReplicationJob) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[25]
+	mi := &file_proto_dfs_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1756,7 +1859,7 @@ func (x *ReplicationJob) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplicationJob.ProtoReflect.Descriptor instead.
 func (*ReplicationJob) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{25}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ReplicationJob) GetJobId() string {
@@ -1840,7 +1943,7 @@ type ReplicationJobAck struct {
 
 func (x *ReplicationJobAck) Reset() {
 	*x = ReplicationJobAck{}
-	mi := &file_proto_dfs_proto_msgTypes[26]
+	mi := &file_proto_dfs_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1852,7 +1955,7 @@ func (x *ReplicationJobAck) String() string {
 func (*ReplicationJobAck) ProtoMessage() {}
 
 func (x *ReplicationJobAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[26]
+	mi := &file_proto_dfs_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1865,7 +1968,7 @@ func (x *ReplicationJobAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplicationJobAck.ProtoReflect.Descriptor instead.
 func (*ReplicationJobAck) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{26}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ReplicationJobAck) GetJobId() string {
@@ -1899,7 +2002,7 @@ type ListReplicationJobsRequest struct {
 
 func (x *ListReplicationJobsRequest) Reset() {
 	*x = ListReplicationJobsRequest{}
-	mi := &file_proto_dfs_proto_msgTypes[27]
+	mi := &file_proto_dfs_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1911,7 +2014,7 @@ func (x *ListReplicationJobsRequest) String() string {
 func (*ListReplicationJobsRequest) ProtoMessage() {}
 
 func (x *ListReplicationJobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[27]
+	mi := &file_proto_dfs_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1924,7 +2027,7 @@ func (x *ListReplicationJobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReplicationJobsRequest.ProtoReflect.Descriptor instead.
 func (*ListReplicationJobsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{27}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListReplicationJobsRequest) GetLimit() int32 {
@@ -1951,7 +2054,7 @@ type ListReplicationJobsResponse struct {
 
 func (x *ListReplicationJobsResponse) Reset() {
 	*x = ListReplicationJobsResponse{}
-	mi := &file_proto_dfs_proto_msgTypes[28]
+	mi := &file_proto_dfs_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1963,7 +2066,7 @@ func (x *ListReplicationJobsResponse) String() string {
 func (*ListReplicationJobsResponse) ProtoMessage() {}
 
 func (x *ListReplicationJobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dfs_proto_msgTypes[28]
+	mi := &file_proto_dfs_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1976,7 +2079,7 @@ func (x *ListReplicationJobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReplicationJobsResponse.ProtoReflect.Descriptor instead.
 func (*ListReplicationJobsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dfs_proto_rawDescGZIP(), []int{28}
+	return file_proto_dfs_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListReplicationJobsResponse) GetJobs() []*ReplicationJob {
@@ -2073,7 +2176,21 @@ const file_proto_dfs_proto_rawDesc = "" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"\x12\n" +
 	"\x10ListNodesRequest\"D\n" +
 	"\x11ListNodesResponse\x12/\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x19.distrophile.dfs.NodeInfoR\x05nodes\"-\n" +
+	"\x05nodes\x18\x01 \x03(\v2\x19.distrophile.dfs.NodeInfoR\x05nodes\"D\n" +
+	"\x13RegisterNodeRequest\x12-\n" +
+	"\x04info\x18\x01 \x01(\v2\x19.distrophile.dfs.NodeInfoR\x04info\"a\n" +
+	"\x14RegisterNodeResponse\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1a\n" +
+	"\baccepted\x18\x02 \x01(\bR\baccepted\x12\x14\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"x\n" +
+	"\x10HeartbeatRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1d\n" +
+	"\n" +
+	"free_bytes\x18\x02 \x01(\x03R\tfreeBytes\x12,\n" +
+	"\x03now\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\"9\n" +
+	"\x11HeartbeatResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"-\n" +
 	"\x12GetFileInfoRequest\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\tR\x06fileId\"}\n" +
 	"\x11StoreChunkRequest\x123\n" +
@@ -2091,15 +2208,7 @@ const file_proto_dfs_proto_rawDesc = "" +
 	"\x10GetChunkResponse\x125\n" +
 	"\x05chunk\x18\x01 \x01(\v2\x1d.distrophile.dfs.ChunkPayloadH\x00R\x05chunk\x121\n" +
 	"\x05error\x18\x02 \x01(\v2\x19.distrophile.dfs.ErrorErrH\x00R\x05errorB\t\n" +
-	"\apayload\"(\n" +
-	"\x12HealthCheckRequest\x12\x12\n" +
-	"\x04full\x18\x01 \x01(\bR\x04full\"\xc3\x01\n" +
-	"\x13HealthCheckResponse\x12-\n" +
-	"\x04info\x18\x01 \x01(\v2\x19.distrophile.dfs.NodeInfoR\x04info\x12-\n" +
-	"\x12active_connections\x18\x02 \x01(\x05R\x11activeConnections\x12\x1d\n" +
-	"\n" +
-	"storage_ok\x18\x03 \x01(\bR\tstorageOk\x12/\n" +
-	"\x05error\x18\x04 \x01(\v2\x19.distrophile.dfs.ErrorErrR\x05error\"t\n" +
+	"\apayload\"t\n" +
 	"\x15ReplicateChunkRequest\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1f\n" +
 	"\vsource_node\x18\x02 \x01(\tR\n" +
@@ -2141,18 +2250,19 @@ const file_proto_dfs_proto_rawDesc = "" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aHEALTHY\x10\x01\x12\r\n" +
 	"\tUNHEALTHY\x10\x02\x12\v\n" +
-	"\aOFFLINE\x10\x032\xb1\x03\n" +
+	"\aOFFLINE\x10\x032\xe2\x04\n" +
 	"\x12CoordinatorService\x12M\n" +
 	"\x06Upload\x12\x1e.distrophile.dfs.UploadRequest\x1a\x1f.distrophile.dfs.UploadResponse(\x010\x01\x12Q\n" +
 	"\bDownload\x12 .distrophile.dfs.DownloadRequest\x1a!.distrophile.dfs.DownloadResponse0\x01\x12R\n" +
 	"\tListFiles\x12!.distrophile.dfs.ListFilesRequest\x1a\".distrophile.dfs.ListFilesResponse\x12R\n" +
 	"\tListNodes\x12!.distrophile.dfs.ListNodesRequest\x1a\".distrophile.dfs.ListNodesResponse\x12Q\n" +
-	"\vGetFileInfo\x12#.distrophile.dfs.GetFileInfoRequest\x1a\x1d.distrophile.dfs.FileMetadata2\xf8\x02\n" +
+	"\vGetFileInfo\x12#.distrophile.dfs.GetFileInfoRequest\x1a\x1d.distrophile.dfs.FileMetadata\x12[\n" +
+	"\fRegisterNode\x12$.distrophile.dfs.RegisterNodeRequest\x1a%.distrophile.dfs.RegisterNodeResponse\x12R\n" +
+	"\tHeartbeat\x12!.distrophile.dfs.HeartbeatRequest\x1a\".distrophile.dfs.HeartbeatResponse2\x9e\x02\n" +
 	"\x12StorageNodeService\x12T\n" +
 	"\n" +
 	"StoreChunk\x12\".distrophile.dfs.StoreChunkRequest\x1a\x1e.distrophile.dfs.StoreChunkAck(\x010\x01\x12O\n" +
-	"\bGetChunk\x12 .distrophile.dfs.GetChunkRequest\x1a!.distrophile.dfs.GetChunkResponse\x12X\n" +
-	"\vHealthCheck\x12#.distrophile.dfs.HealthCheckRequest\x1a$.distrophile.dfs.HealthCheckResponse\x12a\n" +
+	"\bGetChunk\x12 .distrophile.dfs.GetChunkRequest\x1a!.distrophile.dfs.GetChunkResponse\x12a\n" +
 	"\x0eReplicateChunk\x12&.distrophile.dfs.ReplicateChunkRequest\x1a'.distrophile.dfs.ReplicateChunkResponse2\xdf\x01\n" +
 	"\x10CoordinatorAdmin\x12Y\n" +
 	"\x12EnqueueReplication\x12\x1f.distrophile.dfs.ReplicationJob\x1a\".distrophile.dfs.ReplicationJobAck\x12p\n" +
@@ -2171,7 +2281,7 @@ func file_proto_dfs_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_dfs_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_dfs_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_proto_dfs_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_proto_dfs_proto_goTypes = []any{
 	(NodeState)(0),                      // 0: distrophile.dfs.NodeState
 	(*FileMetadata)(nil),                // 1: distrophile.dfs.FileMetadata
@@ -2190,27 +2300,29 @@ var file_proto_dfs_proto_goTypes = []any{
 	(*ListFilesResponse)(nil),           // 14: distrophile.dfs.ListFilesResponse
 	(*ListNodesRequest)(nil),            // 15: distrophile.dfs.ListNodesRequest
 	(*ListNodesResponse)(nil),           // 16: distrophile.dfs.ListNodesResponse
-	(*GetFileInfoRequest)(nil),          // 17: distrophile.dfs.GetFileInfoRequest
-	(*StoreChunkRequest)(nil),           // 18: distrophile.dfs.StoreChunkRequest
-	(*StoreChunkAck)(nil),               // 19: distrophile.dfs.StoreChunkAck
-	(*GetChunkRequest)(nil),             // 20: distrophile.dfs.GetChunkRequest
-	(*GetChunkResponse)(nil),            // 21: distrophile.dfs.GetChunkResponse
-	(*HealthCheckRequest)(nil),          // 22: distrophile.dfs.HealthCheckRequest
-	(*HealthCheckResponse)(nil),         // 23: distrophile.dfs.HealthCheckResponse
-	(*ReplicateChunkRequest)(nil),       // 24: distrophile.dfs.ReplicateChunkRequest
-	(*ReplicateChunkResponse)(nil),      // 25: distrophile.dfs.ReplicateChunkResponse
-	(*ReplicationJob)(nil),              // 26: distrophile.dfs.ReplicationJob
-	(*ReplicationJobAck)(nil),           // 27: distrophile.dfs.ReplicationJobAck
-	(*ListReplicationJobsRequest)(nil),  // 28: distrophile.dfs.ListReplicationJobsRequest
-	(*ListReplicationJobsResponse)(nil), // 29: distrophile.dfs.ListReplicationJobsResponse
-	(*timestamppb.Timestamp)(nil),       // 30: google.protobuf.Timestamp
+	(*RegisterNodeRequest)(nil),         // 17: distrophile.dfs.RegisterNodeRequest
+	(*RegisterNodeResponse)(nil),        // 18: distrophile.dfs.RegisterNodeResponse
+	(*HeartbeatRequest)(nil),            // 19: distrophile.dfs.HeartbeatRequest
+	(*HeartbeatResponse)(nil),           // 20: distrophile.dfs.HeartbeatResponse
+	(*GetFileInfoRequest)(nil),          // 21: distrophile.dfs.GetFileInfoRequest
+	(*StoreChunkRequest)(nil),           // 22: distrophile.dfs.StoreChunkRequest
+	(*StoreChunkAck)(nil),               // 23: distrophile.dfs.StoreChunkAck
+	(*GetChunkRequest)(nil),             // 24: distrophile.dfs.GetChunkRequest
+	(*GetChunkResponse)(nil),            // 25: distrophile.dfs.GetChunkResponse
+	(*ReplicateChunkRequest)(nil),       // 26: distrophile.dfs.ReplicateChunkRequest
+	(*ReplicateChunkResponse)(nil),      // 27: distrophile.dfs.ReplicateChunkResponse
+	(*ReplicationJob)(nil),              // 28: distrophile.dfs.ReplicationJob
+	(*ReplicationJobAck)(nil),           // 29: distrophile.dfs.ReplicationJobAck
+	(*ListReplicationJobsRequest)(nil),  // 30: distrophile.dfs.ListReplicationJobsRequest
+	(*ListReplicationJobsResponse)(nil), // 31: distrophile.dfs.ListReplicationJobsResponse
+	(*timestamppb.Timestamp)(nil),       // 32: google.protobuf.Timestamp
 }
 var file_proto_dfs_proto_depIdxs = []int32{
 	2,  // 0: distrophile.dfs.FileMetadata.chunks:type_name -> distrophile.dfs.ChunkMeta
-	30, // 1: distrophile.dfs.FileMetadata.created_at:type_name -> google.protobuf.Timestamp
-	30, // 2: distrophile.dfs.FileMetadata.updated_at:type_name -> google.protobuf.Timestamp
+	32, // 1: distrophile.dfs.FileMetadata.created_at:type_name -> google.protobuf.Timestamp
+	32, // 2: distrophile.dfs.FileMetadata.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: distrophile.dfs.NodeInfo.state:type_name -> distrophile.dfs.NodeState
-	30, // 4: distrophile.dfs.NodeInfo.last_heartbeat:type_name -> google.protobuf.Timestamp
+	32, // 4: distrophile.dfs.NodeInfo.last_heartbeat:type_name -> google.protobuf.Timestamp
 	7,  // 5: distrophile.dfs.UploadRequest.meta:type_name -> distrophile.dfs.FileUploadMeta
 	4,  // 6: distrophile.dfs.UploadRequest.chunk:type_name -> distrophile.dfs.ChunkPayload
 	5,  // 7: distrophile.dfs.UploadResponse.chunk_result:type_name -> distrophile.dfs.ChunkUploadResult
@@ -2222,39 +2334,41 @@ var file_proto_dfs_proto_depIdxs = []int32{
 	10, // 13: distrophile.dfs.DownloadResponse.error:type_name -> distrophile.dfs.ErrorErr
 	1,  // 14: distrophile.dfs.ListFilesResponse.files:type_name -> distrophile.dfs.FileMetadata
 	3,  // 15: distrophile.dfs.ListNodesResponse.nodes:type_name -> distrophile.dfs.NodeInfo
-	4,  // 16: distrophile.dfs.StoreChunkRequest.chunk:type_name -> distrophile.dfs.ChunkPayload
-	4,  // 17: distrophile.dfs.GetChunkResponse.chunk:type_name -> distrophile.dfs.ChunkPayload
-	10, // 18: distrophile.dfs.GetChunkResponse.error:type_name -> distrophile.dfs.ErrorErr
-	3,  // 19: distrophile.dfs.HealthCheckResponse.info:type_name -> distrophile.dfs.NodeInfo
-	10, // 20: distrophile.dfs.HealthCheckResponse.error:type_name -> distrophile.dfs.ErrorErr
-	30, // 21: distrophile.dfs.ReplicationJob.enqueued_at:type_name -> google.protobuf.Timestamp
-	30, // 22: distrophile.dfs.ReplicationJob.started_at:type_name -> google.protobuf.Timestamp
-	30, // 23: distrophile.dfs.ReplicationJob.finished_at:type_name -> google.protobuf.Timestamp
-	26, // 24: distrophile.dfs.ListReplicationJobsResponse.jobs:type_name -> distrophile.dfs.ReplicationJob
+	3,  // 16: distrophile.dfs.RegisterNodeRequest.info:type_name -> distrophile.dfs.NodeInfo
+	32, // 17: distrophile.dfs.HeartbeatRequest.now:type_name -> google.protobuf.Timestamp
+	4,  // 18: distrophile.dfs.StoreChunkRequest.chunk:type_name -> distrophile.dfs.ChunkPayload
+	4,  // 19: distrophile.dfs.GetChunkResponse.chunk:type_name -> distrophile.dfs.ChunkPayload
+	10, // 20: distrophile.dfs.GetChunkResponse.error:type_name -> distrophile.dfs.ErrorErr
+	32, // 21: distrophile.dfs.ReplicationJob.enqueued_at:type_name -> google.protobuf.Timestamp
+	32, // 22: distrophile.dfs.ReplicationJob.started_at:type_name -> google.protobuf.Timestamp
+	32, // 23: distrophile.dfs.ReplicationJob.finished_at:type_name -> google.protobuf.Timestamp
+	28, // 24: distrophile.dfs.ListReplicationJobsResponse.jobs:type_name -> distrophile.dfs.ReplicationJob
 	6,  // 25: distrophile.dfs.CoordinatorService.Upload:input_type -> distrophile.dfs.UploadRequest
 	11, // 26: distrophile.dfs.CoordinatorService.Download:input_type -> distrophile.dfs.DownloadRequest
 	13, // 27: distrophile.dfs.CoordinatorService.ListFiles:input_type -> distrophile.dfs.ListFilesRequest
 	15, // 28: distrophile.dfs.CoordinatorService.ListNodes:input_type -> distrophile.dfs.ListNodesRequest
-	17, // 29: distrophile.dfs.CoordinatorService.GetFileInfo:input_type -> distrophile.dfs.GetFileInfoRequest
-	18, // 30: distrophile.dfs.StorageNodeService.StoreChunk:input_type -> distrophile.dfs.StoreChunkRequest
-	20, // 31: distrophile.dfs.StorageNodeService.GetChunk:input_type -> distrophile.dfs.GetChunkRequest
-	22, // 32: distrophile.dfs.StorageNodeService.HealthCheck:input_type -> distrophile.dfs.HealthCheckRequest
-	24, // 33: distrophile.dfs.StorageNodeService.ReplicateChunk:input_type -> distrophile.dfs.ReplicateChunkRequest
-	26, // 34: distrophile.dfs.CoordinatorAdmin.EnqueueReplication:input_type -> distrophile.dfs.ReplicationJob
-	28, // 35: distrophile.dfs.CoordinatorAdmin.ListReplicationJobs:input_type -> distrophile.dfs.ListReplicationJobsRequest
-	8,  // 36: distrophile.dfs.CoordinatorService.Upload:output_type -> distrophile.dfs.UploadResponse
-	12, // 37: distrophile.dfs.CoordinatorService.Download:output_type -> distrophile.dfs.DownloadResponse
-	14, // 38: distrophile.dfs.CoordinatorService.ListFiles:output_type -> distrophile.dfs.ListFilesResponse
-	16, // 39: distrophile.dfs.CoordinatorService.ListNodes:output_type -> distrophile.dfs.ListNodesResponse
-	1,  // 40: distrophile.dfs.CoordinatorService.GetFileInfo:output_type -> distrophile.dfs.FileMetadata
-	19, // 41: distrophile.dfs.StorageNodeService.StoreChunk:output_type -> distrophile.dfs.StoreChunkAck
-	21, // 42: distrophile.dfs.StorageNodeService.GetChunk:output_type -> distrophile.dfs.GetChunkResponse
-	23, // 43: distrophile.dfs.StorageNodeService.HealthCheck:output_type -> distrophile.dfs.HealthCheckResponse
-	25, // 44: distrophile.dfs.StorageNodeService.ReplicateChunk:output_type -> distrophile.dfs.ReplicateChunkResponse
-	27, // 45: distrophile.dfs.CoordinatorAdmin.EnqueueReplication:output_type -> distrophile.dfs.ReplicationJobAck
-	29, // 46: distrophile.dfs.CoordinatorAdmin.ListReplicationJobs:output_type -> distrophile.dfs.ListReplicationJobsResponse
-	36, // [36:47] is the sub-list for method output_type
-	25, // [25:36] is the sub-list for method input_type
+	21, // 29: distrophile.dfs.CoordinatorService.GetFileInfo:input_type -> distrophile.dfs.GetFileInfoRequest
+	17, // 30: distrophile.dfs.CoordinatorService.RegisterNode:input_type -> distrophile.dfs.RegisterNodeRequest
+	19, // 31: distrophile.dfs.CoordinatorService.Heartbeat:input_type -> distrophile.dfs.HeartbeatRequest
+	22, // 32: distrophile.dfs.StorageNodeService.StoreChunk:input_type -> distrophile.dfs.StoreChunkRequest
+	24, // 33: distrophile.dfs.StorageNodeService.GetChunk:input_type -> distrophile.dfs.GetChunkRequest
+	26, // 34: distrophile.dfs.StorageNodeService.ReplicateChunk:input_type -> distrophile.dfs.ReplicateChunkRequest
+	28, // 35: distrophile.dfs.CoordinatorAdmin.EnqueueReplication:input_type -> distrophile.dfs.ReplicationJob
+	30, // 36: distrophile.dfs.CoordinatorAdmin.ListReplicationJobs:input_type -> distrophile.dfs.ListReplicationJobsRequest
+	8,  // 37: distrophile.dfs.CoordinatorService.Upload:output_type -> distrophile.dfs.UploadResponse
+	12, // 38: distrophile.dfs.CoordinatorService.Download:output_type -> distrophile.dfs.DownloadResponse
+	14, // 39: distrophile.dfs.CoordinatorService.ListFiles:output_type -> distrophile.dfs.ListFilesResponse
+	16, // 40: distrophile.dfs.CoordinatorService.ListNodes:output_type -> distrophile.dfs.ListNodesResponse
+	1,  // 41: distrophile.dfs.CoordinatorService.GetFileInfo:output_type -> distrophile.dfs.FileMetadata
+	18, // 42: distrophile.dfs.CoordinatorService.RegisterNode:output_type -> distrophile.dfs.RegisterNodeResponse
+	20, // 43: distrophile.dfs.CoordinatorService.Heartbeat:output_type -> distrophile.dfs.HeartbeatResponse
+	23, // 44: distrophile.dfs.StorageNodeService.StoreChunk:output_type -> distrophile.dfs.StoreChunkAck
+	25, // 45: distrophile.dfs.StorageNodeService.GetChunk:output_type -> distrophile.dfs.GetChunkResponse
+	27, // 46: distrophile.dfs.StorageNodeService.ReplicateChunk:output_type -> distrophile.dfs.ReplicateChunkResponse
+	29, // 47: distrophile.dfs.CoordinatorAdmin.EnqueueReplication:output_type -> distrophile.dfs.ReplicationJobAck
+	31, // 48: distrophile.dfs.CoordinatorAdmin.ListReplicationJobs:output_type -> distrophile.dfs.ListReplicationJobsResponse
+	37, // [37:49] is the sub-list for method output_type
+	25, // [25:37] is the sub-list for method input_type
 	25, // [25:25] is the sub-list for extension type_name
 	25, // [25:25] is the sub-list for extension extendee
 	0,  // [0:25] is the sub-list for field type_name
@@ -2279,7 +2393,7 @@ func file_proto_dfs_proto_init() {
 		(*DownloadResponse_Metadata)(nil),
 		(*DownloadResponse_Error)(nil),
 	}
-	file_proto_dfs_proto_msgTypes[20].OneofWrappers = []any{
+	file_proto_dfs_proto_msgTypes[24].OneofWrappers = []any{
 		(*GetChunkResponse_Chunk)(nil),
 		(*GetChunkResponse_Error)(nil),
 	}
@@ -2289,7 +2403,7 @@ func file_proto_dfs_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_dfs_proto_rawDesc), len(file_proto_dfs_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   29,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   3,
 		},
