@@ -2,6 +2,7 @@ package coordinator
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/iLaxios/distrophile/proto"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/iLaxios/distrophile/internal/common/config"
 	"github.com/iLaxios/distrophile/internal/mongodb"
+	rd "github.com/iLaxios/distrophile/internal/redis"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Coordinator implements proto.CoordinatorServiceServer & proto.CoordinatorAdminServer
@@ -19,6 +22,7 @@ type Coordinator struct {
 	Mongo        *mongo.Client
 	Redis        *redis.Client
 	MetadataRepo *mongodb.MetadataRepo
+	NodeRepo     *mongodb.NodeRepo
 
 	proto.UnimplementedCoordinatorServiceServer
 	proto.UnimplementedCoordinatorAdminServer
@@ -27,14 +31,16 @@ type Coordinator struct {
 // Constructor for Coordinator
 func NewCoordinator(cfg *config.Config, log *zap.SugaredLogger, mongo *mongo.Client, rdb *redis.Client) *Coordinator {
 
-	repo := mongodb.NewMetadataRepo(mongo, cfg.MongoDB)
+	FileMataDataRepo := mongodb.NewMetadataRepo(mongo, cfg.MongoDB)
+	NodeRepo := mongodb.NewNodeRepo(mongo, cfg.MongoDB)
 
 	return &Coordinator{
 		Cfg:          cfg,
 		Log:          log,
 		Mongo:        mongo,
 		Redis:        rdb,
-		MetadataRepo: repo,
+		MetadataRepo: FileMataDataRepo,
+		NodeRepo:     NodeRepo,
 	}
 }
 
@@ -78,6 +84,60 @@ func (c *Coordinator) ListNodes(ctx context.Context, req *proto.ListNodesRequest
 func (c *Coordinator) GetFileInfo(ctx context.Context, req *proto.GetFileInfoRequest) (*proto.FileMetadata, error) {
 	c.Log.Info("GetFileInfo called (stub)", "file_id", req.FileId)
 	return nil, nil
+}
+
+// ----------------------------
+// Node Registration
+// ----------------------------
+
+// RegisterNode registers (or upserts) node metadata into Mongo and sets heartbeat key in Redis
+func (c *Coordinator) RegisterNode(ctx context.Context, req *proto.RegisterNodeRequest) (*proto.RegisterNodeResponse, error) {
+	info := req.Info
+	c.Log.Infof("RegisterNode called node=%s addr=%s", info.NodeId, info.Addr)
+
+	// set last_heartbeat if not present
+	if info.LastHeartbeat == nil {
+		info.LastHeartbeat = timestamppb.Now()
+	}
+
+	// persist to mongo
+	if err := c.NodeRepo.UpsertNode(ctx, info); err != nil {
+		c.Log.Error("NodeRepo.UpsertNode failed", zap.Error(err))
+		return &proto.RegisterNodeResponse{Accepted: false, Error: err.Error()}, nil
+	}
+
+	// set redis heartbeat TTL
+	if c.Redis != nil {
+		if err := rd.SetNodeHeartbeat(ctx, c.Redis, info.NodeId, 30*time.Second); err != nil {
+			c.Log.Warn("redis.SetNodeHeartbeat failed", zap.Error(err))
+		}
+	}
+
+	return &proto.RegisterNodeResponse{
+		NodeId:   info.NodeId,
+		Accepted: true,
+	}, nil
+}
+
+func (c *Coordinator) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*proto.HeartbeatResponse, error) {
+	nodeID := req.NodeId
+	c.Log.Infof("Heartbeat from node=%s free_bytes=%d", nodeID, req.FreeBytes)
+
+	now := time.Now()
+	// Update Mongo
+	if err := c.NodeRepo.UpdateHeartbeat(ctx, nodeID, req.FreeBytes, now); err != nil {
+		c.Log.Error("NodeRepo.UpdateHeartbeat failed", zap.Error(err))
+		// continue; still set Redis heartbeat
+	}
+
+	// Update Redis TTL
+	if c.Redis != nil {
+		if err := rd.SetNodeHeartbeat(ctx, c.Redis, nodeID, 30*time.Second); err != nil {
+			c.Log.Warn("redis.SetNodeHeartbeat failed", zap.Error(err))
+		}
+	}
+
+	return &proto.HeartbeatResponse{Ok: true}, nil
 }
 
 // ----------------------------
