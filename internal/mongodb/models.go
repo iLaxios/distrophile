@@ -54,11 +54,11 @@ func ModelToFileMetadata(model FileMetadataModel) *pb.FileMetadata {
 	chunks := make([]*pb.ChunkMeta, len(model.Chunks))
 	for i, c := range model.Chunks {
 		chunks[i] = &pb.ChunkMeta{
-			ChunkId: c.ChunkID,
-			Index:   c.Index,
+			ChunkId:   c.ChunkID,
+			Index:     c.Index,
 			SizeBytes: c.SizeBytes,
-			Checksum: c.Checksum,
-			NodeIds: c.NodeIDs,
+			Checksum:  c.Checksum,
+			NodeIds:   c.NodeIDs,
 		}
 	}
 
@@ -70,4 +70,16 @@ func ModelToFileMetadata(model FileMetadataModel) *pb.FileMetadata {
 		CreatedAt: timestamppb.New(model.CreatedAt),
 		UpdatedAt: timestamppb.New(model.UpdatedAt),
 	}
+}
+
+// node model
+type NodeModel struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	NodeID        string             `bson:"node_id"`
+	Addr          string             `bson:"addr"`
+	State         string             `bson:"state"`
+	FreeBytes     int64              `bson:"free_bytes"`
+	LastHeartbeat time.Time          `bson:"last_heartbeat"`
+	CreatedAt     time.Time          `bson:"created_at"`
+	UpdatedAt     time.Time          `bson:"updated_at"`
 }
