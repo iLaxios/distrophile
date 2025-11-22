@@ -324,8 +324,183 @@ func generateUUID() string {
 }
 
 func (c *Coordinator) Download(req *proto.DownloadRequest, stream proto.CoordinatorService_DownloadServer) error {
-	c.Log.Info("Download called (stub)", "file_id", req.FileId)
+	ctx := stream.Context()
+	fileID := req.FileId
+
+	if fileID == "" {
+		return stream.Send(&proto.DownloadResponse{
+			Payload: &proto.DownloadResponse_Error{
+				Error: &proto.ErrorErr{
+					Message: "file_id is required",
+					Code:    1,
+				},
+			},
+		})
+	}
+
+	c.Log.Infof("Download requested: file_id=%s", fileID)
+
+	// Load file metadata from MongoDB
+	fileMetadata, err := c.MetadataRepo.GetFile(fileID)
+	if err != nil {
+		c.Log.Error("Failed to get file metadata",
+			zap.String("file_id", fileID),
+			zap.Error(err))
+		return stream.Send(&proto.DownloadResponse{
+			Payload: &proto.DownloadResponse_Error{
+				Error: &proto.ErrorErr{
+					Message: fmt.Sprintf("file not found: %s", fileID),
+					Code:    404,
+				},
+			},
+		})
+	}
+
+	// Optionally send metadata first
+	if err := stream.Send(&proto.DownloadResponse{
+		Payload: &proto.DownloadResponse_Metadata{
+			Metadata: fileMetadata,
+		},
+	}); err != nil {
+		return err
+	}
+
+	// Get all nodes for lookup
+	nodes, err := c.NodeRepo.ListNodes(ctx)
+	if err != nil {
+		c.Log.Error("Failed to list nodes", zap.Error(err))
+		return stream.Send(&proto.DownloadResponse{
+			Payload: &proto.DownloadResponse_Error{
+				Error: &proto.ErrorErr{
+					Message: "failed to list nodes",
+					Code:    500,
+				},
+			},
+		})
+	}
+
+	// Create node lookup map
+	nodeMap := make(map[string]*proto.NodeInfo)
+	for _, node := range nodes {
+		nodeMap[node.NodeId] = node
+	}
+
+	// Download chunks in order
+	for _, chunkMeta := range fileMetadata.Chunks {
+		// Find a node that has this chunk
+		var selectedNode *proto.NodeInfo
+		for _, nodeID := range chunkMeta.NodeIds {
+			if node, exists := nodeMap[nodeID]; exists && node.State == proto.NodeState_HEALTHY {
+				selectedNode = node
+				break
+			}
+		}
+
+		if selectedNode == nil {
+			c.Log.Error("No healthy node found for chunk",
+				zap.String("chunk_id", chunkMeta.ChunkId),
+				zap.Strings("node_ids", chunkMeta.NodeIds))
+
+			if err := stream.Send(&proto.DownloadResponse{
+				Payload: &proto.DownloadResponse_Error{
+					Error: &proto.ErrorErr{
+						Message: fmt.Sprintf("no healthy node available for chunk %s", chunkMeta.ChunkId),
+						Code:    503,
+					},
+				},
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Fetch chunk from storage node
+		chunk, err := c.getChunkFromNode(ctx, selectedNode, chunkMeta.ChunkId)
+		if err != nil {
+			c.Log.Error("Failed to get chunk from node",
+				zap.String("chunk_id", chunkMeta.ChunkId),
+				zap.String("node_id", selectedNode.NodeId),
+				zap.Error(err))
+
+			if err := stream.Send(&proto.DownloadResponse{
+				Payload: &proto.DownloadResponse_Error{
+					Error: &proto.ErrorErr{
+						Message: fmt.Sprintf("failed to get chunk %s: %v", chunkMeta.ChunkId, err),
+						Code:    500,
+					},
+				},
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Verify checksum if available
+		if chunkMeta.Checksum != "" && chunk.Checksum != "" {
+			if chunkMeta.Checksum != chunk.Checksum {
+				c.Log.Warn("Checksum mismatch for chunk",
+					zap.String("chunk_id", chunkMeta.ChunkId),
+					zap.String("expected", chunkMeta.Checksum),
+					zap.String("got", chunk.Checksum))
+				// Continue anyway, but log the warning
+			}
+		}
+
+		// Set chunk index from metadata
+		chunk.Index = chunkMeta.Index
+
+		// Stream chunk to client
+		if err := stream.Send(&proto.DownloadResponse{
+			Payload: &proto.DownloadResponse_Chunk{
+				Chunk: chunk,
+			},
+		}); err != nil {
+			return err
+		}
+
+		c.Log.Debugf("Streamed chunk: chunk_id=%s index=%d size=%d",
+			chunkMeta.ChunkId, chunkMeta.Index, chunk.SizeBytes)
+	}
+
+	c.Log.Infof("Download completed: file_id=%s chunks=%d", fileID, len(fileMetadata.Chunks))
 	return nil
+}
+
+// getChunkFromNode fetches a chunk from a storage node
+func (c *Coordinator) getChunkFromNode(ctx context.Context, node *proto.NodeInfo, chunkID string) (*proto.ChunkPayload, error) {
+	// Create gRPC connection to storage node
+	conn, err := grpc.NewClient(
+		node.Addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to node %s: %w", node.Addr, err)
+	}
+	defer conn.Close()
+
+	// Create storage node client
+	client := proto.NewStorageNodeServiceClient(conn)
+
+	// Request chunk
+	resp, err := client.GetChunk(ctx, &proto.GetChunkRequest{
+		ChunkId: chunkID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("GetChunk RPC failed: %w", err)
+	}
+
+	// Check for error in response
+	if errResp := resp.GetError(); errResp != nil {
+		return nil, fmt.Errorf("node returned error: %s (code: %d)", errResp.Message, errResp.Code)
+	}
+
+	// Get chunk payload
+	chunk := resp.GetChunk()
+	if chunk == nil {
+		return nil, fmt.Errorf("node returned empty chunk")
+	}
+
+	return chunk, nil
 }
 
 func (c *Coordinator) ListFiles(ctx context.Context, req *proto.ListFilesRequest) (*proto.ListFilesResponse, error) {
