@@ -75,9 +75,14 @@ func (c *Coordinator) ListFiles(ctx context.Context, req *proto.ListFilesRequest
 }
 
 func (c *Coordinator) ListNodes(ctx context.Context, req *proto.ListNodesRequest) (*proto.ListNodesResponse, error) {
-	c.Log.Info("ListNodes called (stub)")
+
+	nodes, err := c.NodeRepo.ListNodes(ctx)
+	if err != nil {
+		c.Log.Error("Failed to list nodes", "error", err)
+	}
+
 	return &proto.ListNodesResponse{
-		Nodes: []*proto.NodeInfo{},
+		Nodes: nodes,
 	}, nil
 }
 
