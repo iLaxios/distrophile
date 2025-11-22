@@ -2,6 +2,11 @@ package coordinator
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -12,6 +17,8 @@ import (
 	"github.com/iLaxios/distrophile/internal/mongodb"
 	rd "github.com/iLaxios/distrophile/internal/redis"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -49,8 +56,271 @@ func NewCoordinator(cfg *config.Config, log *zap.SugaredLogger, mongo *mongo.Cli
 // ----------------------------
 
 func (c *Coordinator) Upload(stream proto.CoordinatorService_UploadServer) error {
-	c.Log.Info("Upload called (stub)")
-	return nil
+	ctx := stream.Context()
+
+	// Receive first message (metadata)
+	req, err := stream.Recv()
+	if err != nil {
+		if err == io.EOF {
+			return fmt.Errorf("client closed stream before sending metadata")
+		}
+		c.Log.Error("Failed to receive upload metadata", zap.Error(err))
+		return err
+	}
+
+	// Extract metadata from first message
+	meta := req.GetMeta()
+	if meta == nil {
+		return fmt.Errorf("first message must contain metadata")
+	}
+
+	// Generate file_id if not provided
+	fileID := meta.FileId
+	if fileID == "" {
+		fileID = generateUUID()
+		c.Log.Info("Generated file_id", "file_id", fileID)
+	}
+
+	filename := meta.Filename
+	totalSize := meta.SizeBytes
+	chunkSize := meta.ChunkSize
+	if chunkSize == 0 {
+		chunkSize = 2 * 1024 * 1024 // Default 2MB chunks
+	}
+
+	// Acquire file-level lock to prevent concurrent uploads of the same file_id
+	lockKey := fmt.Sprintf("upload:lock:%s", fileID)
+	lockTTL := 30 * time.Minute // Allow up to 30 minutes for upload
+
+	if c.Redis != nil {
+		acquired, err := rd.AcquireLock(ctx, c.Redis, lockKey, lockTTL)
+		if err != nil {
+			c.Log.Error("Failed to acquire upload lock",
+				zap.String("file_id", fileID),
+				zap.Error(err))
+			return c.sendError(stream, fmt.Sprintf("failed to acquire upload lock: %v", err))
+		}
+		if !acquired {
+			c.Log.Warn("Upload already in progress", "file_id", fileID)
+			return c.sendError(stream, "upload already in progress for this file_id")
+		}
+
+		// Ensure lock is released when function exits
+		defer func() {
+			if err := rd.ReleaseLock(ctx, c.Redis, lockKey); err != nil {
+				c.Log.Warn("Failed to release upload lock",
+					zap.String("file_id", fileID),
+					zap.Error(err))
+			}
+		}()
+	}
+
+	c.Log.Infof("Starting upload: file_id=%s filename=%s size=%d chunk_size=%d",
+		fileID, filename, totalSize, chunkSize)
+
+	// Track chunks as they're uploaded
+	chunks := make([]*proto.ChunkMeta, 0)
+	var receivedBytes int64
+
+	// Process chunks
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break // Client finished sending chunks
+			}
+			c.Log.Error("Error receiving chunk", zap.Error(err))
+			return c.sendError(stream, fmt.Sprintf("failed to receive chunk: %v", err))
+		}
+
+		chunk := req.GetChunk()
+		if chunk == nil {
+			return c.sendError(stream, "expected chunk payload")
+		}
+
+		// Generate chunk_id if not provided
+		chunkID := chunk.ChunkId
+		if chunkID == "" {
+			chunkID = generateUUID()
+		}
+
+		// Calculate checksum if not provided
+		checksum := chunk.Checksum
+		if checksum == "" && len(chunk.Data) > 0 {
+			hash := sha256.Sum256(chunk.Data)
+			checksum = hex.EncodeToString(hash[:])
+		}
+
+		// Pick a node to store this chunk
+		node, err := c.pickNode(ctx)
+		if err != nil {
+			c.Log.Error("Failed to pick node", zap.Error(err))
+			return c.sendError(stream, fmt.Sprintf("no available nodes: %v", err))
+		}
+
+		// Connect to storage node and send chunk
+		chunkResult, err := c.storeChunkOnNode(ctx, node, fileID, chunkID, chunk, checksum)
+		if err != nil {
+			c.Log.Error("Failed to store chunk on node",
+				zap.String("chunk_id", chunkID),
+				zap.String("node_id", node.NodeId),
+				zap.Error(err))
+
+			// Send error result for this chunk
+			if err := stream.Send(&proto.UploadResponse{
+				Payload: &proto.UploadResponse_ChunkResult{
+					ChunkResult: &proto.ChunkUploadResult{
+						ChunkId: chunkID,
+						NodeId:  node.NodeId,
+						Success: false,
+						Error:   err.Error(),
+					},
+				},
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Record chunk metadata
+		chunks = append(chunks, &proto.ChunkMeta{
+			ChunkId:   chunkID,
+			Index:     chunk.Index,
+			SizeBytes: chunk.SizeBytes,
+			Checksum:  checksum,
+			NodeIds:   []string{node.NodeId},
+		})
+
+		receivedBytes += chunk.SizeBytes
+
+		// Send chunk result back to client
+		if err := stream.Send(&proto.UploadResponse{
+			Payload: &proto.UploadResponse_ChunkResult{
+				ChunkResult: chunkResult,
+			},
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Verify we received all expected bytes
+	if receivedBytes != totalSize {
+		c.Log.Warnf("Size mismatch: expected=%d received=%d", totalSize, receivedBytes)
+	}
+
+	// Create file metadata
+	now := timestamppb.Now()
+	fileMetadata := &proto.FileMetadata{
+		FileId:    fileID,
+		Filename:  filename,
+		SizeBytes: totalSize,
+		Chunks:    chunks,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	// Save to MongoDB
+	if err := c.MetadataRepo.SaveFile(fileMetadata); err != nil {
+		c.Log.Error("Failed to save file metadata", zap.Error(err))
+		return c.sendError(stream, fmt.Sprintf("failed to save metadata: %v", err))
+	}
+
+	c.Log.Infof("Upload completed: file_id=%s chunks=%d", fileID, len(chunks))
+
+	// Send final summary
+	return stream.Send(&proto.UploadResponse{
+		Payload: &proto.UploadResponse_Summary{
+			Summary: &proto.FileUploadSummary{
+				FileId:   fileID,
+				Metadata: fileMetadata,
+			},
+		},
+	})
+}
+
+// storeChunkOnNode connects to a storage node and stores a chunk
+func (c *Coordinator) storeChunkOnNode(ctx context.Context, node *proto.NodeInfo, fileID, chunkID string, chunk *proto.ChunkPayload, checksum string) (*proto.ChunkUploadResult, error) {
+	// Create gRPC connection to storage node
+	conn, err := grpc.NewClient(
+		node.Addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to node %s: %w", node.Addr, err)
+	}
+	defer conn.Close()
+
+	// Create storage node client
+	client := proto.NewStorageNodeServiceClient(conn)
+
+	// Create bidirectional stream
+	storeStream, err := client.StoreChunk(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create StoreChunk stream: %w", err)
+	}
+
+	// Prepare chunk with generated ID and checksum
+	chunkPayload := &proto.ChunkPayload{
+		ChunkId:   chunkID,
+		Index:     chunk.Index,
+		Data:      chunk.Data,
+		SizeBytes: chunk.SizeBytes,
+		Checksum:  checksum,
+	}
+
+	// Send chunk to node
+	storeReq := &proto.StoreChunkRequest{
+		Chunk:    chunkPayload,
+		FileId:   fileID,
+		Uploader: "coordinator", // Could be client ID in future
+	}
+
+	if err := storeStream.Send(storeReq); err != nil {
+		return nil, fmt.Errorf("failed to send chunk to node: %w", err)
+	}
+
+	// Receive acknowledgment
+	ack, err := storeStream.Recv()
+	if err != nil {
+		return nil, fmt.Errorf("failed to receive ack from node: %w", err)
+	}
+
+	// Close the stream
+	if err := storeStream.CloseSend(); err != nil {
+		c.Log.Warn("Failed to close StoreChunk stream", zap.Error(err))
+	}
+
+	if !ack.Ok {
+		return nil, fmt.Errorf("node rejected chunk: %s", ack.Error)
+	}
+
+	return &proto.ChunkUploadResult{
+		ChunkId:  chunkID,
+		NodeId:   node.NodeId,
+		Success:  true,
+		Checksum: ack.Checksum,
+	}, nil
+}
+
+// sendError sends an error response to the client
+func (c *Coordinator) sendError(stream proto.CoordinatorService_UploadServer, message string) error {
+	return stream.Send(&proto.UploadResponse{
+		Payload: &proto.UploadResponse_Error{
+			Error: &proto.ErrorErr{
+				Message: message,
+				Code:    1,
+			},
+		},
+	})
+}
+
+// generateUUID generates a simple UUID v4-like string
+func generateUUID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	b[6] = (b[6] & 0x0f) | 0x40 // Version 4
+	b[8] = (b[8] & 0x3f) | 0x80 // Variant 10
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func (c *Coordinator) Download(req *proto.DownloadRequest, stream proto.CoordinatorService_DownloadServer) error {
@@ -122,6 +392,35 @@ func (c *Coordinator) RegisterNode(ctx context.Context, req *proto.RegisterNodeR
 		NodeId:   info.NodeId,
 		Accepted: true,
 	}, nil
+}
+
+func (c *Coordinator) pickNode(ctx context.Context) (*proto.NodeInfo, error) {
+	nodes, err := c.NodeRepo.ListNodes(ctx)
+	if err != nil {
+		c.Log.Error("pickNode: failed ListNodes", zap.Error(err))
+		return nil, fmt.Errorf("failed to pick node")
+	}
+	if len(nodes) == 0 {
+		c.Log.Error("pickNode: no nodes registered")
+		return nil, fmt.Errorf("no nodes available")
+	}
+
+	var best *proto.NodeInfo
+	for _, n := range nodes {
+		if n.State != proto.NodeState_HEALTHY {
+			continue
+		}
+		if best == nil || n.FreeBytes > best.FreeBytes {
+			best = n
+		}
+	}
+
+	if best == nil {
+		c.Log.Error("pickNode: no healthy nodes")
+		return nil, fmt.Errorf("no healthy nodes available")
+	}
+
+	return best, nil
 }
 
 func (c *Coordinator) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*proto.HeartbeatResponse, error) {
