@@ -504,7 +504,6 @@ func (c *Coordinator) getChunkFromNode(ctx context.Context, node *proto.NodeInfo
 }
 
 func (c *Coordinator) ListFiles(ctx context.Context, req *proto.ListFilesRequest) (*proto.ListFilesResponse, error) {
-	c.Log.Info("ListFiles called (stub)")
 
 	files, total, err := c.MetadataRepo.ListFiles(int64(req.Limit), int64(req.Offset))
 
@@ -532,8 +531,24 @@ func (c *Coordinator) ListNodes(ctx context.Context, req *proto.ListNodesRequest
 }
 
 func (c *Coordinator) GetFileInfo(ctx context.Context, req *proto.GetFileInfoRequest) (*proto.FileMetadata, error) {
-	c.Log.Info("GetFileInfo called (stub)", "file_id", req.FileId)
-	return nil, nil
+	fileID := req.FileId
+
+	if fileID == "" {
+		return nil, fmt.Errorf("file_id is required")
+	}
+
+	c.Log.Info("GetFileInfo called", "file_id", fileID)
+
+	// Load file metadata from MongoDB
+	fileMetadata, err := c.MetadataRepo.GetFile(fileID)
+	if err != nil {
+		c.Log.Error("Failed to get file metadata",
+			zap.String("file_id", fileID),
+			zap.Error(err))
+		return nil, fmt.Errorf("file not found: %s", fileID)
+	}
+
+	return fileMetadata, nil
 }
 
 // ----------------------------
