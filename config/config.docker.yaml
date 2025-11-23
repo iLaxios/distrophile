@@ -1,0 +1,13 @@
+env: docker
+coordinator_addr: "coordinator:9000"
+coordinator_port: "9000"
+storage_node_port: "9001"
+data_dir: "/app/data"
+replication_factor: 2
+
+# mongodb - use docker service name
+mongo_uri: "mongodb://admin:password@mongodb:27017"
+mongo_db: "distrophile"
+
+# redis - use docker service name
+redis_addr: "redis:6379"

@@ -1,0 +1,41 @@
+# Multi-stage build for Storage Node
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build storage node binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o storagenode ./cmd/storagenode
+
+# Build CLI binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o distrophile ./cmd/cli
+
+# Runtime stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates
+
+# Copy binaries from builder
+COPY --from=builder /build/storagenode /app/storagenode
+COPY --from=builder /build/distrophile /app/distrophile
+
+# Copy config
+COPY config/config.docker.yaml /app/config/config.yaml
+
+# Create data directory
+RUN mkdir -p /app/data
+
+# Expose storage node port
+EXPOSE 9001
+
+# Run storage node
+CMD ["/app/storagenode"]

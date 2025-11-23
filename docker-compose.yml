@@ -11,15 +11,55 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - distrophile-network
 
   redis:
     image: redis:7.0
     container_name: distrophile-redis
     ports:
       - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-  
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redis_data:/data
+    networks:
+      - distrophile-network
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.coordinator
+    container_name: distrophile-coordinator
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+    networks:
+      - distrophile-network
+
+  storagenode:
+    build:
+      context: .
+      dockerfile: Dockerfile.storagenode
+    depends_on:
+      - coordinator
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - COORDINATOR_ADDR=coordinator:9000
+      - NODE_ID=${NODE_ID:-}
+    volumes:
+      - storagenode_data:/app/data
+    networks:
+      - distrophile-network
+
+networks:
+  distrophile-network:
+    driver: bridge
 
 volumes:
   mongo_data:
   redis_data:
+  storagenode_data:

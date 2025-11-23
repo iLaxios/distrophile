@@ -1,0 +1,38 @@
+# Multi-stage build for Coordinator
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build coordinator binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o coordinator ./cmd/coordinator
+
+# Build CLI binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o distrophile ./cmd/cli
+
+# Runtime stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates
+
+# Copy binaries from builder
+COPY --from=builder /build/coordinator /app/coordinator
+COPY --from=builder /build/distrophile /app/distrophile
+
+# Copy config
+COPY config/config.docker.yaml /app/config/config.yaml
+
+# Expose coordinator port
+EXPOSE 9000
+
+# Run coordinator
+CMD ["/app/coordinator"]
