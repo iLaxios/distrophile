@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -53,6 +54,11 @@ func main() {
 	// Register gRPC services
 	proto.RegisterCoordinatorServiceServer(grpcServer, coord)
 	proto.RegisterCoordinatorAdminServer(grpcServer, coord)
+
+	// Start health monitor
+	ctx := context.Background()
+	coordinator.StartHealthMonitor(ctx, coord)
+	log.Info("Health monitor started")
 
 	// Start serving
 	if err := grpcServer.Serve(lis); err != nil {

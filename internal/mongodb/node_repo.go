@@ -11,8 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-
-
 type NodeRepo struct {
 	collection *mongo.Collection
 }
@@ -78,4 +76,16 @@ func (r *NodeRepo) ListNodes(ctx context.Context) ([]*pb.NodeInfo, error) {
 		})
 	}
 	return out, nil
+}
+
+func (r *NodeRepo) UpdateNodeState(ctx context.Context, nodeID string, state pb.NodeState) error {
+	filter := bson.M{"node_id": nodeID}
+	update := bson.M{
+		"$set": bson.M{
+			"state":      state.String(),
+			"updated_at": time.Now(),
+		},
+	}
+	_, err := r.collection.UpdateOne(ctx, filter, update)
+	return err
 }

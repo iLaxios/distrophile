@@ -98,8 +98,17 @@ func startHeartbeat(cfg *config.Config, log *zap.SugaredLogger, nodeID string) {
 		return
 	}
 
+	// Use configured interval, default to 60 seconds
+	intervalSec := cfg.HeartbeatIntervalSec
+	if intervalSec <= 0 {
+		intervalSec = 60
+	}
+	interval := time.Duration(intervalSec) * time.Second
+
+	log.Infof("Starting heartbeat loop: interval=%v", interval)
+
 	go func() {
-		ticker := time.NewTicker(15 * time.Second)
+		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		for range ticker.C {

@@ -573,7 +573,14 @@ func (c *Coordinator) RegisterNode(ctx context.Context, req *proto.RegisterNodeR
 
 	// set redis heartbeat TTL
 	if c.Redis != nil {
-		if err := rd.SetNodeHeartbeat(ctx, c.Redis, info.NodeId, 30*time.Second); err != nil {
+		// Use configured timeout, default to 120 seconds
+		timeoutSec := c.Cfg.HeartbeatTimeoutSec
+		if timeoutSec <= 0 {
+			timeoutSec = 120
+		}
+		ttl := time.Duration(timeoutSec) * time.Second
+
+		if err := rd.SetNodeHeartbeat(ctx, c.Redis, info.NodeId, ttl); err != nil {
 			c.Log.Warn("redis.SetNodeHeartbeat failed", zap.Error(err))
 		}
 	}
@@ -626,7 +633,14 @@ func (c *Coordinator) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest
 
 	// Update Redis TTL
 	if c.Redis != nil {
-		if err := rd.SetNodeHeartbeat(ctx, c.Redis, nodeID, 30*time.Second); err != nil {
+		// Use configured timeout, default to 120 seconds
+		timeoutSec := c.Cfg.HeartbeatTimeoutSec
+		if timeoutSec <= 0 {
+			timeoutSec = 120
+		}
+		ttl := time.Duration(timeoutSec) * time.Second
+
+		if err := rd.SetNodeHeartbeat(ctx, c.Redis, nodeID, ttl); err != nil {
 			c.Log.Warn("redis.SetNodeHeartbeat failed", zap.Error(err))
 		}
 	}

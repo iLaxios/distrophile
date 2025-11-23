@@ -5,6 +5,10 @@ storage_node_port: "9001"
 data_dir: "/app/data"
 replication_factor: 2
 
+# heartbeat configuration
+heartbeat_interval_sec: 60  # How often nodes send heartbeats
+heartbeat_timeout_sec: 120  # When to mark node as unhealthy (2x interval)
+
 # mongodb - use docker service name
 mongo_uri: "mongodb://admin:password@mongodb:27017"
 mongo_db: "distrophile"

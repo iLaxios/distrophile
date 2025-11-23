@@ -4,6 +4,10 @@ storage_node_port: "9001"
 data_dir: "./data"
 replication_factor: 2
 
+# heartbeat configuration
+heartbeat_interval_sec: 60  # How often nodes send heartbeats
+heartbeat_timeout_sec: 120  # When to mark node as unhealthy (2x interval)
+
 # mongodb
 mongo_uri: "mongodb://admin:password@localhost:27017"
 mongo_db: "distrophile"

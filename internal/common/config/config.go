@@ -26,6 +26,8 @@ func Load() (*Config, error) {
 	v.BindEnv("storage_node_port")
 	v.BindEnv("data_dir")
 	v.BindEnv("replication_factor")
+	v.BindEnv("heartbeat_interval_sec")
+	v.BindEnv("heartbeat_timeout_sec")
 
 	// Read config file (not mandatory)
 	if err := v.ReadInConfig(); err != nil {
