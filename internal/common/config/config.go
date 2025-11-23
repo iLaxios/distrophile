@@ -21,6 +21,7 @@ func Load() (*Config, error) {
 	// ENV key -> lowercase with underscore
 	v.SetEnvPrefix("DP") // DP_ENV, DP_COORDINATOR_PORT etc.
 	v.BindEnv("env")
+	v.BindEnv("coordinator_addr")
 	v.BindEnv("coordinator_port")
 	v.BindEnv("storage_node_port")
 	v.BindEnv("data_dir")
