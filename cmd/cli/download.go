@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/iLaxios/distrophile/proto"
@@ -20,7 +19,7 @@ func downloadCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fileID := args[0]
-			outputPath := fileID + ".downloaded"
+			var outputPath string
 			if len(args) >= 2 {
 				outputPath = args[1]
 			}
@@ -48,11 +47,19 @@ func downloadFile(fileID, outputPath string) error {
 		return fmt.Errorf("failed to create download stream: %w", err)
 	}
 
-	file, err := os.Create(outputPath)
+	// Create temporary file for download
+	tempPath := fileID + ".downloading"
+	file, err := os.Create(tempPath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		file.Close()
+		// Clean up temp file if it still exists (download failed)
+		if _, err := os.Stat(tempPath); err == nil {
+			os.Remove(tempPath)
+		}
+	}()
 
 	var fileMetadata *proto.FileMetadata
 	var totalBytes int64
@@ -85,18 +92,26 @@ func downloadFile(fileID, outputPath string) error {
 		}
 	}
 
-	if fileMetadata != nil {
-		// Rename to original filename if we have metadata
-		if fileMetadata.Filename != "" {
-			newPath := filepath.Join(filepath.Dir(outputPath), fileMetadata.Filename)
-			if err := os.Rename(outputPath, newPath); err == nil {
-				outputPath = newPath
-			}
-		}
+	// Close the file before renaming
+	file.Close()
+
+	// Determine final output path
+	finalPath := outputPath
+	if finalPath == "" && fileMetadata != nil && fileMetadata.Filename != "" {
+		// Use original filename if no output path specified
+		finalPath = fileMetadata.Filename
+	} else if finalPath == "" {
+		// Fallback to file_id if no metadata
+		finalPath = fileID
+	}
+
+	// Rename temp file to final path
+	if err := os.Rename(tempPath, finalPath); err != nil {
+		return fmt.Errorf("failed to rename downloaded file: %w", err)
 	}
 
 	fmt.Printf("\n✅ Download complete!\n")
-	fmt.Printf("  Saved to: %s\n", outputPath)
+	fmt.Printf("  Saved to: %s\n", finalPath)
 	fmt.Printf("  Size: %d bytes\n", totalBytes)
 	return nil
 }
